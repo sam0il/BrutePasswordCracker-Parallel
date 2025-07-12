@@ -23,46 +23,40 @@ public class ParallelBruteForceEngine {
 
     public String crackPassword() {
         ResultHolder result = new ResultHolder();
-        AtomicInteger attemptCounter = new AtomicInteger(0);
+        AtomicInteger attemptCounter = new AtomicInteger();
 
+        // Try every length up to max
         for (int length = 1; length <= maxLength; length++) {
+            // Apply mask only to valid indices
             Set<Integer> currentMaskIndices = new HashSet<>();
-            if (maskConfig.hasMask()) {
-                for (int index : maskConfig.maskIndices) {
-                    if (index < length) {
-                        currentMaskIndices.add(index);
-                    }
-                }
+            for (int index : maskConfig.maskIndices) {
+                if (index < length) currentMaskIndices.add(index);
             }
+
             Map<Integer, Character> maskMap = maskConfig.getMaskMap(currentMaskIndices);
             int variableLength = length - maskMap.size();
 
-            // Calculate total combinations safely
             long totalCombinations = (long) Math.pow(charSet.length(), variableLength);
-            if (totalCombinations == 0) continue;
-            if (totalCombinations > Integer.MAX_VALUE) {
-                System.out.println("Skipping length " + length + " (too many combinations)");
+            if (totalCombinations == 0 || totalCombinations > Integer.MAX_VALUE) {
+                System.out.println("Skipping length " + length + " (invalid or too many combinations)");
                 continue;
             }
+
             int intTotal = (int) totalCombinations;
-
-            ExecutorService executor = Executors.newFixedThreadPool(threadCount);
             int chunkSize = (int) Math.ceil((double) intTotal / threadCount);
+            ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 
+            // Assign ranges to threads
             for (int i = 0; i < threadCount; i++) {
-                // FIX: Declare startIndex and endIndex here
-                int startIndex = i * chunkSize;
-                int endIndex = Math.min(startIndex + chunkSize, intTotal);
+                int start = i * chunkSize;
+                int end = Math.min(start + chunkSize, intTotal);
 
-                executor.submit(new BruteForceWorker(
-                        charSet, length, startIndex, endIndex,
-                        validator, result, attemptCounter, maskMap
-                ));
+                executor.submit(new BruteForceWorker(charSet, length, start, end, validator, result, attemptCounter, maskMap));
             }
 
             executor.shutdown();
             while (!executor.isTerminated()) {
-                // Wait for threads to finish
+                // Wait for all threads
             }
 
             if (result.isFound()) return result.getPassword();

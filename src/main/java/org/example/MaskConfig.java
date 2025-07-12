@@ -11,20 +11,17 @@ public class MaskConfig {
         this.maskIndices = maskIndices;
     }
 
+    // Builds a map of index -> fixed character from mask
     public Map<Integer, Character> getMaskMap(Set<Integer> currentMaskIndices) {
         Map<Integer, Character> map = new HashMap<>();
         List<Integer> sortedIndices = new ArrayList<>(currentMaskIndices);
-        Collections.sort(sortedIndices);
 
         for (int i = 0; i < sortedIndices.size(); i++) {
             int position = sortedIndices.get(i);
-            char maskChar = (i < mask.length()) ? mask.charAt(i) : '*';
+            char maskChar = (i < mask.length()) ? mask.charAt(i) : '*'; // '*' as fallback
             map.put(position, maskChar);
         }
         return map;
     }
 
-    public boolean hasMask() {
-        return !maskIndices.isEmpty() && !mask.isEmpty();
-    }
 }

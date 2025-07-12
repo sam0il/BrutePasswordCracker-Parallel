@@ -5,9 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class BruteForceWorker implements Runnable {
     private final String charSet;
-    private final int length;
-    private final int startIndex;
-    private final int endIndex;
+    private final int length, startIndex, endIndex;
     private final HashValidator validator;
     private final ResultHolder result;
     private final AtomicInteger attemptCounter;
@@ -34,9 +32,9 @@ public class BruteForceWorker implements Runnable {
         for (int i = startIndex; i < endIndex && !result.isFound(); i++) {
             String partial = indexToPassword(i, base, variableLength);
             String candidate = buildCandidate(partial);
-            int currentAttempt = attemptCounter.incrementAndGet();
 
-            if (currentAttempt % 1000 == 0) { // from 4284ms to 1642
+            int currentAttempt = attemptCounter.incrementAndGet();
+            if (currentAttempt % 1000 == 0) {
                 System.out.println("Attempt [" + currentAttempt + "]: Trying " + candidate);
             }
 
@@ -48,25 +46,18 @@ public class BruteForceWorker implements Runnable {
         }
     }
 
+    // Fills in mask and inserts variable characters
     private String buildCandidate(String partial) {
         char[] candidate = new char[length];
         int partialIndex = 0;
-
-        for (int position = 0; position < length; position++) {
-            if (maskMap.containsKey(position)) {
-                candidate[position] = maskMap.get(position);
-            } else {
-                candidate[position] = partial.charAt(partialIndex++);
-            }
+        for (int i = 0; i < length; i++) {
+            candidate[i] = maskMap.containsKey(i) ? maskMap.get(i) : partial.charAt(partialIndex++);
         }
         return new String(candidate);
     }
 
+    // Converts index to password using given base
     private String indexToPassword(int index, int base, int len) {
-        if (len == 0) {
-            return ""; // Handle case where there are no variable characters
-        }
-
         char[] password = new char[len];
         for (int i = len - 1; i >= 0; i--) {
             password[i] = charSet.charAt(index % base);

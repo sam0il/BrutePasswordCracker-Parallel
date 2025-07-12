@@ -5,7 +5,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Main {
-    // Just change this path when trying to run the dictionary attack to your path on the passwords.txt get the full path!
+    // Just change this path when trying to run the dictionary attack
+    // to your path on the passwords file located in resources
+    // get the full path!
     // And you have hashes stored in tests.txt which are inside the Passwords.txt
     private static final String dictionaryPath = "C:\\Users\\samoi\\IdeaProjects\\BrutePasswordCrackerParallel\\src\\main\\resources\\Passwords";
     public static String crackedPassword;
@@ -15,44 +17,46 @@ public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
+        // Get hash to crack
         System.out.print("Enter the target MD5 hash: ");
         String targetHash = scanner.nextLine().trim();
 
+        // Validate hash format
         if (targetHash.length() != 32 || !targetHash.matches("[a-fA-F0-9]+")) {
             System.out.println("Invalid MD5 hash. Must be 32 hex characters.");
             return;
         }
 
-        System.out.print("Choose attack mode: 1 for Brute Force 2 for Dictionary Attack: ");
+        // Select attack mode
+        System.out.print("Choose attack mode: 1 for Brute Force, 2 for Dictionary Attack: ");
         int mode = scanner.nextInt();
         scanner.nextLine();
 
         long startTime = System.currentTimeMillis();
 
         if (mode == 1) {
-            // Parallel Brute Force mode
-            System.out.print("Enter the maximum password length to try and get to: ");
+            // Brute force settings
+            System.out.print("Enter maximum password length: ");
             int maxLength = scanner.nextInt();
             scanner.nextLine();
 
-            System.out.print("Enter the character set to use (e.g., abcdef) or press Enter for default: ");
+            System.out.print("Enter character set or press Enter for default: ");
             String charset = scanner.nextLine().trim();
             if (charset.isEmpty()) {
                 charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-                System.out.println("Using default character set: " + charset);
+                System.out.println("Using default charset: " + charset);
             }
 
-            System.out.print("Enter mask indices (comma-separated, e.g. 0,2): ");
+            System.out.print("Enter mask indices (comma-separated): ");
             maskIndicesInput = scanner.nextLine().trim();
 
-            System.out.print("Enter a mask (optional, press Enter for no mask): ");
+            System.out.print("Enter mask (optional): ");
             mask = scanner.nextLine().trim();
 
             // Parse mask indices
             Set<Integer> indices = new HashSet<>();
             if (!maskIndicesInput.isEmpty()) {
-                String[] parts = maskIndicesInput.split(",");
-                for (String part : parts) {
+                for (String part : maskIndicesInput.split(",")) {
                     try {
                         int index = Integer.parseInt(part.trim());
                         if (index < 0) {
@@ -72,19 +76,15 @@ public class Main {
 
             System.out.println("Starting brute-force attack...");
 
-            ParallelBruteForceEngine engine = new ParallelBruteForceEngine(
-                    validator, charset, maxLength, maskConfig
-            );
+            ParallelBruteForceEngine engine = new ParallelBruteForceEngine(validator, charset, maxLength, maskConfig);
             crackedPassword = engine.crackPassword();
 
         } else if (mode == 2) {
-            // Parallel Dictionary Attack mode
-            HashValidator validator = new HashValidator(targetHash);
+            // Dictionary attack
             System.out.println("Starting dictionary attack...");
-
+            HashValidator validator = new HashValidator(targetHash);
             ParallelDictionaryEngine dictEngine = new ParallelDictionaryEngine(validator, dictionaryPath);
             crackedPassword = dictEngine.crackPassword();
-
         } else {
             System.out.println("Invalid mode selected.");
             return;
