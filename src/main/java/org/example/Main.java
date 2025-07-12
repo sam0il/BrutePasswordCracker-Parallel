@@ -5,7 +5,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Main {
-    private static final String dictionaryPath = "C:\\Users\\samoi\\IdeaProjects\\ProektoTest1\\src\\resources\\Passwords.txt";
+    // Just change this path when trying to run the dictionary attack to your path on the passwords.txt get the full path!
+    // And you have hashes stored in tests.txt which are inside the Passwords.txt
+    private static final String dictionaryPath = "C:\\Users\\samoi\\IdeaProjects\\BrutePasswordCrackerParallel\\src\\main\\resources\\Passwords";
     public static String crackedPassword;
     public static String mask = "";
     private static String maskIndicesInput;
@@ -25,7 +27,10 @@ public class Main {
         int mode = scanner.nextInt();
         scanner.nextLine();
 
+        long startTime = System.currentTimeMillis();
+
         if (mode == 1) {
+            // Parallel Brute Force mode
             System.out.print("Enter the maximum password length to try and get to: ");
             int maxLength = scanner.nextInt();
             scanner.nextLine();
@@ -66,20 +71,27 @@ public class Main {
             HashValidator validator = new HashValidator(targetHash);
 
             System.out.println("Starting brute-force attack...");
-            long startTime = System.currentTimeMillis();
 
             ParallelBruteForceEngine engine = new ParallelBruteForceEngine(
                     validator, charset, maxLength, maskConfig
             );
             crackedPassword = engine.crackPassword();
 
-            long endTime = System.currentTimeMillis();
-            System.out.println("Time taken: " + (endTime - startTime) + " ms");
+        } else if (mode == 2) {
+            // Parallel Dictionary Attack mode
+            HashValidator validator = new HashValidator(targetHash);
+            System.out.println("Starting dictionary attack...");
+
+            ParallelDictionaryEngine dictEngine = new ParallelDictionaryEngine(validator, dictionaryPath);
+            crackedPassword = dictEngine.crackPassword();
 
         } else {
-            System.out.println("Invalid mode selected. Only Parallel Brute Force is available.");
+            System.out.println("Invalid mode selected.");
             return;
         }
+
+        long endTime = System.currentTimeMillis();
+        System.out.println("Time taken: " + (endTime - startTime) + " ms");
 
         if (crackedPassword != null) {
             System.out.println("Password cracked: " + crackedPassword);
