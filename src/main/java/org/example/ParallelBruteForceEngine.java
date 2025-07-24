@@ -5,7 +5,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.TimeUnit;
 
 public class ParallelBruteForceEngine {
     private final HashValidator validator;
@@ -23,11 +24,10 @@ public class ParallelBruteForceEngine {
 
     public String crackPassword() {
         ResultHolder result = new ResultHolder();
-        AtomicInteger attemptCounter = new AtomicInteger();
+        AtomicLong attemptCounter = new AtomicLong();
 
-        // Try every length up to max
         for (int length = 1; length <= maxLength; length++) {
-            // Apply mask only to valid indices
+            // Mask indices valid for this length
             Set<Integer> currentMaskIndices = new HashSet<>();
             for (int index : maskConfig.maskIndices) {
                 if (index < length) currentMaskIndices.add(index);
@@ -35,33 +35,51 @@ public class ParallelBruteForceEngine {
 
             Map<Integer, Character> maskMap = maskConfig.getMaskMap(currentMaskIndices);
             int variableLength = length - maskMap.size();
-
-            long totalCombinations = (long) Math.pow(charSet.length(), variableLength);
-            if (totalCombinations == 0 || totalCombinations > Integer.MAX_VALUE) {
-                //NEED TO FIX CANT COMPUTE LESS THAN 5 length VERY BIG PROBLEM!!
-                System.out.println("Skipping length " + length + " (invalid or too many combinations)");
+            if (variableLength < 0) {
+                // mask fixes more characters than the length -> skip
                 continue;
             }
 
-            int intTotal = (int) totalCombinations;
-            int chunkSize = (int) Math.ceil((double) intTotal / threadCount);
+            long totalCombinations = powLong(charSet.length(), variableLength);
+            if (totalCombinations <= 0) {
+                System.out.println("Skipping length " + length + " (invalid combination count)");
+                continue;
+            }
+
+            long chunkSize = (totalCombinations + threadCount - 1) / threadCount;
             ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 
-            // Assign ranges to threads
             for (int i = 0; i < threadCount; i++) {
-                int start = i * chunkSize;
-                int end = Math.min(start + chunkSize, intTotal);
+                long start = i * chunkSize;
+                long end = Math.min(start + chunkSize, totalCombinations);
+                if (start >= end) break;
 
-                executor.submit(new BruteForceWorker(charSet, length, start, end, validator, result, attemptCounter, maskMap));
+                executor.submit(new BruteForceWorker(
+                        charSet, length, start, end,
+                        validator, result, attemptCounter, maskMap
+                ));
             }
 
             executor.shutdown();
-            while (!executor.isTerminated()) {
-                // Wait for all threads
+            try {
+                executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
 
             if (result.isFound()) return result.getPassword();
         }
         return null;
+    }
+
+    private static long powLong(int base, int exp) {
+        long res = 1L;
+        for (int i = 0; i < exp; i++) {
+            if (res > Long.MAX_VALUE / base) {
+                return -1; // overflow
+            }
+            res *= base;
+        }
+        return res;
     }
 }

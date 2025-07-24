@@ -1,19 +1,20 @@
 package org.example;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class BruteForceWorker implements Runnable {
     private final String charSet;
-    private final int length, startIndex, endIndex;
+    private final int length;
+    private final long startIndex, endIndex;          // long
     private final HashValidator validator;
     private final ResultHolder result;
-    private final AtomicInteger attemptCounter;
+    private final AtomicLong attemptCounter;          // AtomicLong
     private final Map<Integer, Character> maskMap;
 
-    public BruteForceWorker(String charSet, int length, int startIndex, int endIndex,
+    public BruteForceWorker(String charSet, int length, long startIndex, long endIndex,
                             HashValidator validator, ResultHolder result,
-                            AtomicInteger attemptCounter, Map<Integer, Character> maskMap) {
+                            AtomicLong attemptCounter, Map<Integer, Character> maskMap) {
         this.charSet = charSet;
         this.length = length;
         this.startIndex = startIndex;
@@ -29,11 +30,11 @@ public class BruteForceWorker implements Runnable {
         int base = charSet.length();
         int variableLength = length - maskMap.size();
 
-        for (int i = startIndex; i < endIndex && !result.isFound(); i++) {
-            String partial = indexToPassword(i, base, variableLength);
+        for (long i = startIndex; i < endIndex && !result.isFound(); i++) {
+            String partial = indexToPassword(i, base, variableLength); // i is now a long
             String candidate = buildCandidate(partial);
 
-            int currentAttempt = attemptCounter.incrementAndGet();
+            long currentAttempt = attemptCounter.incrementAndGet();
             if (currentAttempt % 1000 == 0) {
                 System.out.println("Attempt [" + currentAttempt + "]: Trying " + candidate);
             }
@@ -56,11 +57,11 @@ public class BruteForceWorker implements Runnable {
         return new String(candidate);
     }
 
-    // Converts index to password using given base
-    private String indexToPassword(int index, int base, int len) {
+    // Converts index (long) to password using given base
+    private String indexToPassword(long index, int base, int len) {
         char[] password = new char[len];
         for (int i = len - 1; i >= 0; i--) {
-            password[i] = charSet.charAt(index % base);
+            password[i] = charSet.charAt((int)(index % base));
             index /= base;
         }
         return new String(password);
