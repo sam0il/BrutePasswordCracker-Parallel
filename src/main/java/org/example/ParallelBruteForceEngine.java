@@ -38,6 +38,7 @@ public class ParallelBruteForceEngine {
 
             long totalCombinations = (long) Math.pow(charSet.length(), variableLength);
             if (totalCombinations == 0 || totalCombinations > Integer.MAX_VALUE) {
+                //NEED TO FIX CANT COMPUTE LESS THAN 5 length VERY BIG PROBLEM!!
                 System.out.println("Skipping length " + length + " (invalid or too many combinations)");
                 continue;
             }
