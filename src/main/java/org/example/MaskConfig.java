@@ -18,7 +18,7 @@ public class MaskConfig {
 
         for (int i = 0; i < sortedIndices.size(); i++) {
             int position = sortedIndices.get(i);
-            char maskChar = (i < mask.length()) ? mask.charAt(i) : '*'; // '*' as fallback
+            char maskChar = (i < mask.length()) ? mask.charAt(i) : '?'; // '?' as fallback
             map.put(position, maskChar);
         }
         return map;
