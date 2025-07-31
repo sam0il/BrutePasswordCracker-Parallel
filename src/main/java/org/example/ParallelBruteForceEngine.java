@@ -62,9 +62,17 @@ public class ParallelBruteForceEngine {
 
             executor.shutdown();
             try {
-                executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+                // Wait a bounded time first (good practice)
+                if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                    System.out.println("Still running after 60s, forcing shutdown...");
+                    executor.shutdownNow(); // Interrupt running tasks
+                    if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+                        System.err.println("Executor did not terminate cleanly.");
+                    }
+                }
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                executor.shutdownNow();
+                Thread.currentThread().interrupt(); // preserve interrupt status
             }
 
             if (result.isFound()) return result.getPassword();

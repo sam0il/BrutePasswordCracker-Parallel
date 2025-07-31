@@ -38,9 +38,16 @@ public class ParallelDictionaryEngine {
 
         executor.shutdown();
         try {
-            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) { // Wait for 60 seconds
+                System.out.println("Forcing shutdown... some tasks may still be running.");
+                executor.shutdownNow(); // Forcefully stop remaining tasks
+                if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+                    System.err.println("Executor did not terminate.");
+                }
+            }
         } catch (InterruptedException e) {
-            System.out.println("Dictionary attack interrupted");
+             executor.shutdownNow();
+            Thread.currentThread().interrupt(); // Preserve interrupt status
         }
 
         return result.getPassword();
